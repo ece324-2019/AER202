@@ -1,10 +1,11 @@
 import os
 from PIL import Image
 
-FULL_IMAGE_DIR = '../datasets/full_raw/'
-FULL_IMAGE_SAVE_DIR = '../datasets/full/'
-TEST_IMAGE_DIR = '../datasets/test/'
-TEST_IMAGE_SAVE_DIR = '../datasets/test_cropped/'
+# Paths are relative to main.py (i.e. where function is called)
+FULL_IMAGE_DIR = 'datasets/full_raw/'
+FULL_IMAGE_SAVE_DIR = 'datasets/full/'
+TEST_IMAGE_DIR = 'datasets/test/'
+TEST_IMAGE_SAVE_DIR = 'datasets/test_cropped/'
 TARGET_ASPECT_RATIO = 1.75  # width / height
 RESIZED_IMAGE_WIDTH = 100
 
