@@ -64,12 +64,12 @@ def load_model_baseline(lr: float, num_classes: int):
     return model_baseline, loss_func, optimizer
 
 
-def evaluate(model, val_loader, disable_cuda):
+def evaluate(model, val_loader, cuda_enabled):
     total_corr = 0
 
     for i, batch in enumerate(val_loader):
         features, label = batch
-        if torch.cuda.is_available() and not disable_cuda:
+        if cuda_enabled:
             features = features.cuda()
             label = label.cuda()
 
@@ -89,7 +89,7 @@ def main():
     args = parse_arguments()
 
     torch.manual_seed(args.seed)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    cuda_enabled = True if torch.cuda.is_available() and not args.disable_cuda else False
 
     if args.process_images:
         process_images(args.small_dataset)
@@ -119,7 +119,7 @@ def main():
     target_transform = torchvision.transforms.Compose([torchvision.transforms.transforms.Lambda(lambda x: one_hot(x, len(classes)))])
 
     model_baseline, loss_func, optimizer = load_model_baseline(args.learning_rate, len(classes))
-    if torch.cuda.is_available() and not args.disable_cuda:
+    if cuda_enabled:
         model_baseline.cuda()
 
     # Arrays to keep track of data while training to plot
@@ -138,7 +138,7 @@ def main():
         for i, batch in enumerate(dataloader_train):
             # Get batch of data
             features, label = batch
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 features = features.cuda()
                 label = label.cuda()
 
@@ -149,12 +149,12 @@ def main():
 
             # Run neural network on batch
             predictions = model_baseline(features)
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 predictions = predictions.cuda()
 
             # Compute loss
             target_tensor = torch.Tensor(oneh_labels[label.cpu()])
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 target_tensor = target_tensor.cuda()
             batch_loss = loss_func(input=predictions.squeeze(), target=target_tensor)
 
@@ -172,18 +172,18 @@ def main():
 
             # Get batch of data
             features_valid, label_valid = batch_valid
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 features_valid = features_valid.cuda()
                 label_valid = label_valid.cuda()
 
             # Run neural network on validation batch
             predictions_valid = model_baseline(features_valid)
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 predictions_valid = predictions_valid.cuda()
 
             # Compute loss
             target_tensor = torch.Tensor(oneh_labels[label_valid.cpu()])
-            if torch.cuda.is_available() and not args.disable_cuda:
+            if cuda_enabled:
                 target_tensor = target_tensor.cuda()
             batch_loss_valid = loss_func(input=predictions_valid.squeeze(),
                                          target=target_tensor)
@@ -193,9 +193,9 @@ def main():
         # Store epoch data in lists
         training_losses.append(accum_loss.detach() / num_batches)
         validation_losses.append(accum_loss_valid.detach() / num_batches_valid)
-        training_acc = evaluate(model_baseline, dataloader_train, args.disable_cuda)
+        training_acc = evaluate(model_baseline, dataloader_train, cuda_enabled)
         training_accuracies.append(training_acc)
-        valid_acc = evaluate(model_baseline, dataloader_valid, args.disable_cuda)
+        valid_acc = evaluate(model_baseline, dataloader_valid, cuda_enabled)
         validation_accuracies.append(valid_acc)
         print("epoch:", epoch, "training_acc:", training_acc, "valid_acc:", valid_acc)
 
