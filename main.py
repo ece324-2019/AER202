@@ -64,11 +64,14 @@ def load_model_baseline(lr: float, num_classes: int):
     return model_baseline, loss_func, optimizer
 
 
-def evaluate(model, val_loader):
+def evaluate(model, val_loader, disable_cuda):
     total_corr = 0
 
     for i, batch in enumerate(val_loader):
         features, label = batch
+        if torch.cuda.is_available() and not disable_cuda:
+            features = features.cuda()
+            label = label.cuda()
 
         # Run model on data
         prediction = model(features)
@@ -116,7 +119,8 @@ def main():
     target_transform = torchvision.transforms.Compose([torchvision.transforms.transforms.Lambda(lambda x: one_hot(x, len(classes)))])
 
     model_baseline, loss_func, optimizer = load_model_baseline(args.learning_rate, len(classes))
-    # TODO: Add CUDA support for baseline model
+    if torch.cuda.is_available() and not args.disable_cuda:
+        model_baseline.cuda()
 
     # Arrays to keep track of data while training to plot
     gradient_steps = []
@@ -134,6 +138,9 @@ def main():
         for i, batch in enumerate(dataloader_train):
             # Get batch of data
             features, label = batch
+            if torch.cuda.is_available() and not args.disable_cuda:
+                features = features.cuda()
+                label = label.cuda()
 
             num_batches += 1
 
@@ -142,9 +149,14 @@ def main():
 
             # Run neural network on batch
             predictions = model_baseline(features)
+            if torch.cuda.is_available() and not args.disable_cuda:
+                predictions = predictions.cuda()
 
             # Compute loss
-            batch_loss = loss_func(input=predictions.squeeze(), target=torch.Tensor(oneh_labels[label]))
+            target_tensor = torch.Tensor(oneh_labels[label.cpu()])
+            if torch.cuda.is_available() and not args.disable_cuda:
+                target_tensor = target_tensor.cuda()
+            batch_loss = loss_func(input=predictions.squeeze(), target=target_tensor)
 
             accum_loss += batch_loss
 
@@ -160,22 +172,30 @@ def main():
 
             # Get batch of data
             features_valid, label_valid = batch_valid
+            if torch.cuda.is_available() and not args.disable_cuda:
+                features_valid = features_valid.cuda()
+                label_valid = label_valid.cuda()
 
             # Run neural network on validation batch
             predictions_valid = model_baseline(features_valid)
+            if torch.cuda.is_available() and not args.disable_cuda:
+                predictions_valid = predictions_valid.cuda()
 
             # Compute loss
+            target_tensor = torch.Tensor(oneh_labels[label_valid.cpu()])
+            if torch.cuda.is_available() and not args.disable_cuda:
+                target_tensor = target_tensor.cuda()
             batch_loss_valid = loss_func(input=predictions_valid.squeeze(),
-                                         target=torch.Tensor(oneh_labels[label_valid]))
+                                         target=target_tensor)
 
             accum_loss_valid += batch_loss_valid
 
         # Store epoch data in lists
-        training_losses.append(accum_loss / num_batches)
-        validation_losses.append(accum_loss_valid / num_batches_valid)
-        training_acc = evaluate(model_baseline, dataloader_train)
+        training_losses.append(accum_loss.detach() / num_batches)
+        validation_losses.append(accum_loss_valid.detach() / num_batches_valid)
+        training_acc = evaluate(model_baseline, dataloader_train, args.disable_cuda)
         training_accuracies.append(training_acc)
-        valid_acc = evaluate(model_baseline, dataloader_valid)
+        valid_acc = evaluate(model_baseline, dataloader_valid, args.disable_cuda)
         validation_accuracies.append(valid_acc)
         print("epoch:", epoch, "training_acc:", training_acc, "valid_acc:", valid_acc)
 
