@@ -7,7 +7,7 @@ FULL_IMAGE_SAVE_DIR = 'datasets/full/'
 TEST_IMAGE_DIR = 'datasets/test/'
 TEST_IMAGE_SAVE_DIR = 'datasets/test_cropped/'
 TARGET_ASPECT_RATIO = 1.75  # width / height
-RESIZED_IMAGE_WIDTH = 100
+RESIZED_IMAGE_WIDTH = 300
 
 
 def open_files(is_small_dataset):

@@ -2,6 +2,7 @@ import os
 import argparse
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,7 +65,7 @@ def load_model_baseline(lr: float, num_classes: int):
     return model_baseline, loss_func, optimizer
 
 
-def evaluate(model, val_loader, cuda_enabled):
+def evaluate(model, val_loader, cuda_enabled: bool):
     total_corr = 0
 
     for i, batch in enumerate(val_loader):
@@ -85,20 +86,31 @@ def evaluate(model, val_loader, cuda_enabled):
     return float(total_corr) / len(val_loader.dataset)
 
 
+def imshow(img):
+    img = img / 2 + 0.5
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    plt.show()
+
+
 def main():
     args = parse_arguments()
 
+    # Set random seeds
     torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
     cuda_enabled = True if torch.cuda.is_available() and not args.disable_cuda else False
 
     if args.process_images:
         process_images(args.small_dataset)
 
     # Load data and normalize images
+    classes = get_classes(args.small_dataset)
     transform = torchvision.transforms.Compose(
         [torchvision.transforms.ToTensor(),
          torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
+    # target_transform = torchvision.transforms.Compose([torchvision.transforms.transforms.Lambda(lambda x: one_hot(x, len(classes)))])
     dataset = torchvision.datasets.ImageFolder(FULL_IMAGE_DIR, transform=transform)
 
     # Split data
@@ -106,7 +118,6 @@ def main():
 
     # Encode data
     label_encoder = LabelEncoder()
-    classes = get_classes(args.small_dataset)
     int_classes = label_encoder.fit_transform(classes)
     oneh_encoder = OneHotEncoder(categories='auto')
     int_classes = int_classes.reshape(-1, 1)
@@ -116,8 +127,7 @@ def main():
     dataloader_train = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
     dataloader_valid = DataLoader(valid_data, batch_size=args.batch_size, shuffle=False)
 
-    target_transform = torchvision.transforms.Compose([torchvision.transforms.transforms.Lambda(lambda x: one_hot(x, len(classes)))])
-
+    # Load baseline model
     model_baseline, loss_func, optimizer = load_model_baseline(args.learning_rate, len(classes))
     if cuda_enabled:
         model_baseline.cuda()
@@ -201,16 +211,20 @@ def main():
 
     plt.plot(training_accuracies)
     plt.plot(validation_accuracies)
+    plt.legend(['Training', 'Validation'])
     plt.title('Accuracies')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
+    plt.savefig('accuracies', dpi=300)
     plt.show()
 
     plt.plot(training_losses)
     plt.plot(validation_losses)
+    plt.legend(['Training', 'Validation'])
     plt.title('Losses')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
+    plt.savefig('losses', dpi=300)
     plt.show()
 
 
