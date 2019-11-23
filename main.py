@@ -66,6 +66,7 @@ def load_model_baseline(lr: float, num_classes: int):
 
 
 def evaluate(model, val_loader, cuda_enabled: bool):
+    """Evaluate model and calculate validation accuracy"""
     total_corr = 0
 
     for i, batch in enumerate(val_loader):
@@ -106,11 +107,10 @@ def main():
 
     # Load data and normalize images
     classes = get_classes(args.small_dataset)
-    transform = torchvision.transforms.Compose(
-        [torchvision.transforms.ToTensor(),
-         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
-    # target_transform = torchvision.transforms.Compose([torchvision.transforms.transforms.Lambda(lambda x: one_hot(x, len(classes)))])
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
     dataset = torchvision.datasets.ImageFolder(FULL_IMAGE_DIR, transform=transform)
 
     # Split data
