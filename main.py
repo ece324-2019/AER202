@@ -108,6 +108,7 @@ def main():
     # Load data and normalize images
     classes = get_classes(args.small_dataset)
     transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(224),
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
@@ -226,6 +227,8 @@ def main():
     plt.ylabel('Loss')
     plt.savefig('losses', dpi=300)
     plt.show()
+
+    torch.save(model_baseline, 'baseline_model.pt')
 
 
 if __name__ == '__main__':
