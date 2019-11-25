@@ -1,5 +1,7 @@
 datasets/
 *.png
+models/**/*.pt
+models/yolo-coco/yolov3.weights
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
