@@ -26,7 +26,7 @@ Currently the tool is trained on:
   
   Airbus Beluga Transporter
   
-  Lufthansa Boeing 767-400
+  Lufthansa Boeing 747-400
   
   Porter Bombardier Q400
   
